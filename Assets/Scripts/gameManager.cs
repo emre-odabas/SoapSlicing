@@ -6,7 +6,7 @@ using UnityEngine;
 
 public class gameManager : MonoBehaviour {
 
-    public static gameManager instantiate;
+    public static gameManager instance;
 
     [Header ("References")]
     public GameObject refSoapParticle;
@@ -22,12 +22,13 @@ public class gameManager : MonoBehaviour {
     public LayerMask layerMask; // kesilebilen objelerin layerini ayarlar (editörder)
     public float lineLower = 0.5f; // her basamakta alçalma derecesi
     public int soapX = 10; //sabunun x uzunluğu
-    public int soapY = 20; //sabunun y uzunluğu
+    public int soapY = 15; //sabunun y uzunluğu
 
     private GameObject[] lastFloor; // en sona kalan satır
     private int sliced = 0; // başlangıçta kesilen obje olmadığı için 0
 
     //Properties
+    public bool startGame { get; set; } = true; //aktif satır
     public float currentLine { get; set; } = 2.5f; //aktif satır
     public int sliceStep { get; set; } = 0; //tamamlanan basamak sayısı
 
@@ -40,7 +41,7 @@ public class gameManager : MonoBehaviour {
     }
 
     void Awake () {
-        instantiate = this;
+        instance = this;
     }
 
     void Start () {
@@ -53,14 +54,14 @@ public class gameManager : MonoBehaviour {
             Collider[] slicedObjects = Physics.OverlapBox (knifeBlade.transform.position, new Vector3 (knifeBlade.transform.localScale.x * 5, knifeBlade.transform.localScale.y, knifeBlade.transform.localScale.z), knifeBlade.transform.rotation, layerMask);
 
             foreach (Collider obj in slicedObjects) {
-                SlicedHull slicedObj = Slice (obj.gameObject, material); 
+                SlicedHull slicedObj = Slice (obj.gameObject, material);
                 if (slicedObj != null) {
-                    GameObject slicedUpper = slicedObj.CreateUpperHull (obj.gameObject, material);//oluşan üst nesne
-                    GameObject slicesLower = slicedObj.CreateLowerHull (obj.gameObject, material);//oluşan alt nesne
+                    GameObject slicedUpper = slicedObj.CreateUpperHull (obj.gameObject, material); //oluşan üst nesne
+                    GameObject slicesLower = slicedObj.CreateLowerHull (obj.gameObject, material); //oluşan alt nesne
 
                     addComponents (slicedUpper, slicesLower); // nesnelerin componentlerini ayalar
 
-                    Destroy (obj.gameObject);// orjinal nesneyi siler
+                    Destroy (obj.gameObject); // orjinal nesneyi siler
                 }
             }
         }
@@ -80,7 +81,7 @@ public class gameManager : MonoBehaviour {
 
         //Other
         FindObjectOfType<AudioManager> ().Play ("Cutting");
-  
+
         sliced++; //her obje kesildiğinde +1 artırıyoruz
         if (sliced == 150) // 10x15 lik bir yüzeyde en az 150 obje kesilmeli.     
             lineSetup ();
@@ -92,13 +93,16 @@ public class gameManager : MonoBehaviour {
         currentLine -= lineLower; //aktif satırı lineLower kadar alçaltıyoruz
         Instantiate (smileEffect, new Vector3 (4.5f, 6.5f, 4.5f), Quaternion.identity);
 
-        if (sliceStep == 6) 
-            Finish();
+        if (sliceStep == 6) //6 olmasının sebebi sabunun yüksekliği 5 birim kare fakat bizim bıçak 1 birim aşağıdan başladığı için 1 fazla sayıyoruz
+            Finish ();
     }
 
     void Finish () {
         Instantiate (finalEffect, new Vector3 (4.5f, 6.5f, 4.5f), Quaternion.identity);
         FindObjectOfType<AudioManager> ().Play ("Finish");
+        UIControl.instance.showCompletePanel();
+        //sliceStep = 0;
+        startGame = false;
     }
 
     public SlicedHull Slice (GameObject obj, Material material = null) {
@@ -113,7 +117,7 @@ public class gameManager : MonoBehaviour {
                 particle.transform.parent = soapParentTransform;
             }
         }
-        GameObject surprise = Instantiate (refSuprise, new Vector3 (4.5f, -2, 6.5f), Quaternion.identity);
+        GameObject surprise = Instantiate (refSuprise, new Vector3 (4.5f, 1.55f, 6.5f), Quaternion.identity);
         surprise.transform.Rotate (new Vector3 (90, 0, 0));
     }
 
